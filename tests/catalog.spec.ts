@@ -1,0 +1,41 @@
+import { expect, test } from '@playwright/test'
+
+test('home page shows the captured catalog and original banner', async ({ page }) => {
+  await page.goto('/')
+  await expect(page).toHaveTitle(/BuquêFlor/)
+  await expect(page.getByRole('heading', { name: /Presentes que emocionam/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Lisianthus', exact: true })).toBeVisible()
+  await expect(page.getByText('Escolha entre 126 presentes e flores para cada ocasião.')).toBeVisible()
+  await expect(page.locator('.hero-banner img')).toHaveAttribute('src', /banner-principal\.webp/)
+})
+
+test('category filtering, product details and cart work locally', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Orquídeas', exact: true }).click()
+  await expect(page.locator('.product-card')).toHaveCount(13)
+  await page.getByRole('button', { name: 'Todos', exact: true }).click()
+  await page.getByRole('textbox', { name: 'Buscar produtos' }).fill('Mini Buquê 3 Rosas Brancas')
+  await page.getByRole('link', { name: 'Mini Buquê 3 Rosas Brancas', exact: true }).click()
+  await expect(page).toHaveURL(/\/produto\/mini-buque-3-rosas-brancas$/)
+  await expect(page.getByRole('heading', { name: 'Mini Buquê 3 Rosas Brancas' })).toBeVisible()
+  await page.getByRole('button', { name: /Adicionar à sacola/ }).click()
+  await page.getByRole('button', { name: /Sacola/ }).click()
+  await expect(page.getByRole('complementary', { name: 'Sua sacola' })).toContainText('Mini Buquê 3 Rosas Brancas')
+  await expect(page.getByRole('complementary', { name: 'Sua sacola' })).toContainText('R$ 39,90')
+})
+
+test('mobile storefront keeps search, occasion filters and bottom navigation usable', async ({ page }) => {
+  await page.setViewportSize({ width: 430, height: 932 })
+  await page.goto('/')
+  await expect(page.locator('.mobile-search')).toBeVisible()
+  await expect(page.locator('.mobile-bottom-nav')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'O presente certo para cada momento' })).toBeVisible()
+  const pageWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+  expect(pageWidth).toBeLessThanOrEqual(430)
+  await page.getByRole('button', { name: 'Dia dos Namorados' }).click()
+  await expect(page.getByRole('heading', { name: 'Dia dos Namorados' })).toBeVisible()
+  await expect(page.locator('.product-card').first()).toBeVisible()
+  await page.goto('/produto/mini-buque-3-rosas-brancas')
+  await expect(page.locator('.mobile-bottom-nav')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mini Buquê 3 Rosas Brancas' })).toBeVisible()
+})
